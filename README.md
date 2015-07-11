@@ -6,7 +6,8 @@ Realtime-like behavior can be achieved using cron or any other scheduling tool.
 v0.01 Barely-working version
 
 ## Usage
-./sdiag.pl <input-file.txt>
+./sdiag.pl {input-file.txt}
+
 it outputs diagram to output.png in current directory.
 All configuration is held inside code of the script in global variables and scattered. Feel free to fix this.
 
