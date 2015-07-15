@@ -21,6 +21,7 @@ use warnings;
 use utf8;
 use feature 'unicode_strings';
 use Data::Dumper;
+use Imager;
 
 sub sign {
     my $a = shift;
@@ -45,6 +46,9 @@ my $nick_change_regex =
 my $nick_lj_regex =
   '\[[0-9]{2}:[0-9]{2}:[0-9]{2}\] (.*?) \((.*?)\) (left|joined).*'
   ;    # $1 is nick, $2 is ident/host
+  
+my $max_indirect_mentions = 5;
+  
 binmode STDOUT, ':encoding(UTF8)';
 
 my %all_nodes;
@@ -80,7 +84,6 @@ while ( my $line = <$FH> ) {
         if ( !$n ) {
             $n = find_by_ident($ident);
             if ( !$n ) {
-
                 # Just make new node and remember ident
                 $all_nodes{$nick}{'ident'} = $ident;
                 $all_nodes{$nick}{'nick'}  = $nick;
@@ -125,16 +128,29 @@ close $FH;
 # second pass: find any relations between nicks, using above list as known nicks
 open( $FH, '<:encoding(UTF8)', $file ) or die "Can't open file $file, $!";
 
+my $passed = 0;
+my $last_mentioned;
+my $last_nick;
+
 while ( my $line = <$FH> ) {
     chomp $line;
+    my $found;
+    $passed++;    
     if ( $line =~ m/$text_line_regex/ ) {
         my $a_nick = $1;
         my $text   = $2;
         for my $nick ( keys %all_nodes ) {
             if ( $text =~ m/\Q$nick\E/ ) {
                 $all_nodes{$a_nick}->{'mentions'}{$nick}++;
+                $found = 1;
+                $passed = 0;
+                $last_nick = $a_nick;
+                $last_mentioned = $nick;
             }
         }
+    }
+    if (!$found && $last_mentioned && $passed < $max_indirect_mentions) {
+        $all_nodes{$last_nick}->{'mentions'}{$last_mentioned}++;
     }
 }
 close $FH;
