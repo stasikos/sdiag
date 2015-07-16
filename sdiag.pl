@@ -244,12 +244,14 @@ foreach my $nick ( keys %all_nodes ) {
 # Draw diagram
 #
 use GD::Simple;
+use Imager;
 
 my $iw  = 800;
 my $ih  = 600;
-my $img = GD::Simple->new( $iw, $ih );
-$img->bgcolor('yellow');
-$img->fgcolor('blue');
+
+my $img = Imager->new(xsize=> $iw, ysize=>$ih, channels=>4);
+$img->box(color=>'white', xmin=>0, ymin=>0, xmax=>$iw, ymax=>$ih, filled=>1);
+my $font = Imager::Font->new(file => '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf');
 
 # using same algo as piespy
 
@@ -418,11 +420,8 @@ EDGE: foreach my $e (@edges) {
     my $x2 = ( $iw * ( $n2->{'x'} - $minX ) / ( $maxX - $minX ) ) + $bs;
     my $y2 = ( $ih * ( $n2->{'y'} - $minY ) / ( $maxY - $minY ) ) + $bs;
 
-    $img->fgcolor('blue');
-
-    #       $img->penSize($w, $w);
-    $img->moveTo( $x1, $y1 );
-    $img->lineTo( $x2, $y2 );
+    $img->line(x1=>$x1, y1=>$y1, x2=>$x2, y2=>$y2, color=>'blue', aa=>1);   
+    
 }
 
 # draw nodes
@@ -434,18 +433,13 @@ foreach my $nick ( keys %all_nodes ) {
 
 # It will look like everyone has at least one message, and I assume it is not bad
     my $nr = log( $n->{'message_count'} // 1 ) * 5;
-    $img->bgcolor('yellow');
-    $img->fgcolor('blue');
-    $img->moveTo( $x1, $y1 );
-    $img->ellipse( $nr, $nr );
-    $img->fgcolor('red');
-    $img->moveTo( $x1 + sqrt($nr), $y1 - sqrt($nr) );
-    $img->string($nick);
+    
+    $img->circle(color => 'blue', x => $x1, y => $y1, r => $nr, filled => 1, aa => 1);
+    $img->circle(color => 'yellow', x => $x1, y => $y1, r => $nr - 2, filled => 1, aa => 1);
+    $img->string(font => $font, x => $x1 + sqrt($nr), y => $y1 - sqrt($nr), color=>'red', aa=>1, size=>10, string=>$nick);
+    
 
 }
 
-my $IMG;
-open $IMG, '>', 'output.png' or die "$!";
+$img->write(file => 'output.png');
 
-print $IMG $img->png;
-close $IMG;
